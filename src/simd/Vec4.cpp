@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "portability-simd-intrinsics"
 //
 // Created by kurono267 on 2019-01-03.
 //
@@ -13,11 +15,11 @@ Vec4::Vec4(const Vec4 &v) {
 
 }
 
-Vec4::Vec4(const float v) {
+Vec4::Vec4(float v) {
 	simd = _mm_set1_ps(v);
 }
 
-Vec4::Vec4(const float _x, const float _y, const float _z, const float _w) {
+Vec4::Vec4(float _x, float _y, float _z, float _w) {
 	simd = _mm_set_ps(_w,_z,_y,_x);
 }
 
@@ -25,4 +27,40 @@ Vec4::Vec4(const float *_data) {
 	simd = _mm_load_ps(_data);
 }
 
+Vec4::Vec4(const __m128 &_simd) : simd(_simd) {}
+
+Vec4 operator+(const Vec4 &a, const Vec4 &b) {
+	return Vec4(_mm_add_ps(a.simd,b.simd));
 }
+
+Vec4 operator+(const Vec4 &a, float b) {
+	return Vec4(_mm_add_ps(a.simd,_mm_set1_ps(b)));
+}
+
+Vec4 operator-(const Vec4 &a, const Vec4 &b) {
+	return Vec4(_mm_sub_ps(a.simd,b.simd));
+}
+
+Vec4 operator-(const Vec4 &a, float b) {
+	return Vec4(_mm_sub_ps(a.simd,_mm_set1_ps(b)));
+}
+
+Vec4 operator*(const Vec4 &a, const Vec4 &b) {
+	return Vec4(_mm_mul_ps(a.simd,b.simd));
+}
+
+Vec4 operator*(const Vec4 &a, float b) {
+	return Vec4(_mm_mul_ps(a.simd,_mm_set1_ps(b)));
+}
+
+Vec4 operator/(const Vec4 &a, const Vec4 &b) {
+	return Vec4(_mm_div_ps(a.simd,b.simd));
+}
+
+Vec4 operator/(const Vec4 &a, float b) {
+	return Vec4(_mm_div_ps(a.simd,_mm_set1_ps(b)));
+}
+
+}
+
+#pragma clang diagnostic pop
