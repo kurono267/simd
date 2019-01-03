@@ -17,6 +17,15 @@ class Vec4 {
 		explicit Vec4(const float* data);
 		explicit Vec4(const __m128& _simd);
 
+		Vec4& operator+=(const Vec4& b);
+		Vec4& operator+=(float b);
+		Vec4& operator-=(const Vec4& b);
+		Vec4& operator-=(float b);
+		Vec4& operator*=(const Vec4& b);
+		Vec4& operator*=(float b);
+		Vec4& operator/=(const Vec4& b);
+		Vec4& operator/=(float b);
+
 		union {
 			struct {
 				float x; float y; float z; float w;

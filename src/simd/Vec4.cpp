@@ -11,8 +11,8 @@ namespace simd {
 
 Vec4::Vec4() : Vec4(0.f) {}
 
-Vec4::Vec4(const Vec4 &v) {
-
+Vec4::Vec4(const Vec4 &v){
+	simd = v.simd;
 }
 
 Vec4::Vec4(float v) {
@@ -28,6 +28,46 @@ Vec4::Vec4(const float *_data) {
 }
 
 Vec4::Vec4(const __m128 &_simd) : simd(_simd) {}
+
+Vec4 &Vec4::operator+=(const Vec4 &b) {
+	simd = _mm_add_ps(simd,b.simd);
+	return *this;
+}
+
+Vec4 &Vec4::operator+=(float b) {
+	simd = _mm_add_ps(simd,_mm_set1_ps(b));
+	return *this;
+}
+
+Vec4 &Vec4::operator-=(const Vec4 &b) {
+	simd = _mm_sub_ps(simd,b.simd);
+	return *this;
+}
+
+Vec4 &Vec4::operator-=(float b) {
+	simd = _mm_sub_ps(simd,_mm_set1_ps(b));
+	return *this;
+}
+
+Vec4 &Vec4::operator*=(const Vec4 &b) {
+	simd = _mm_mul_ps(simd,b.simd);
+	return *this;
+}
+
+Vec4 &Vec4::operator*=(float b) {
+	simd = _mm_mul_ps(simd,_mm_set1_ps(b));
+	return *this;
+}
+
+Vec4 &Vec4::operator/=(const Vec4 &b) {
+	simd = _mm_div_ps(simd,b.simd);
+	return *this;
+}
+
+Vec4 &Vec4::operator/=(float b) {
+	simd = _mm_div_ps(simd,_mm_set1_ps(b));
+	return *this;
+}
 
 Vec4 operator+(const Vec4 &a, const Vec4 &b) {
 	return Vec4(_mm_add_ps(a.simd,b.simd));

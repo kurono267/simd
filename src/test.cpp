@@ -27,6 +27,10 @@ BOOST_AUTO_TEST_CASE(Vec4Init)
 	for(int i = 0;i<4;++i){
 		BOOST_CHECK_EQUAL(v3.data[i],data[i]);
 	}
+	simd::Vec4 v4 = v3;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v4.data[i],v3.data[i]);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(Vec4Arithmetic){
@@ -64,6 +68,53 @@ BOOST_AUTO_TEST_CASE(Vec4Arithmetic){
 	simd::Vec4 v7 = a/c;
 	for(int i = 0;i<4;++i){
 		BOOST_CHECK_EQUAL(v7.data[i],a.data[i]/c);
+	}
+}
+
+BOOST_AUTO_TEST_CASE(Vec4ArithmeticAdditional){
+	simd::Vec4 a(1.f);
+	simd::Vec4 b(2.f);
+	float c = 3.0f;
+
+	simd::Vec4 v0 = a;
+	v0 += b;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v0.data[i],a.data[i]+b.data[i]);
+	}
+	simd::Vec4 v1 = a;
+	v1 += c;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v1.data[i],a.data[i]+c);
+	}
+	simd::Vec4 v2 = a;
+	v2 *= b;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v2.data[i],a.data[i]*b.data[i]);
+	}
+	simd::Vec4 v3 = a;
+	v3 *= c;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v3.data[i],a.data[i]*c);
+	}
+	simd::Vec4 v4 = a;
+	v4 /= b;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v4.data[i],a.data[i]/b.data[i]);
+	}
+	simd::Vec4 v5 = a;
+	v5 /= c;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v5.data[i],a.data[i]/c);
+	}
+	simd::Vec4 v6 = a;
+	v6 -= b;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v6.data[i],a.data[i]-b.data[i]);
+	}
+	simd::Vec4 v7 = a;
+	v7 -= c;
+	for(int i = 0;i<4;++i){
+		BOOST_CHECK_EQUAL(v7.data[i],a.data[i]-c);
 	}
 }
 
