@@ -12,7 +12,7 @@ namespace simd {
 class Bool4 {
 public:
 	Bool4() : simd(_mm_setzero_ps()) {}
-	Bool4(const bool v) : simd(_mm_set1_ps(v)) {}
+	Bool4(const bool v) : simd(v?_mm_set1_epi32(0xFFFFFFFF):_mm_setzero_ps()) {}
 	explicit Bool4(const __m128& data) : simd(data) {}
 	Bool4(const Bool4& b) : simd(b.simd) {}
 
@@ -22,6 +22,10 @@ public:
 
 	__m128 simd;
 };
+
+inline Bool4 operator!(const Bool4& a){
+	return Bool4(_mm_xor_ps(a.simd,_mm_set1_epi32(0xFFFFFFFF)));
+}
 
 inline Bool4 operator&(const Bool4& a, const Bool4& b){
 	return Bool4(_mm_and_ps(a.simd,b.simd));
@@ -127,12 +131,15 @@ inline void clearMask4(){
 
 class Result4 {
 	public:
-		Result4(const Bool4& mask) : _mask(mask^Bool4(true)) {} // In init compute false mask
+		Result4(const Bool4& mask) : _mask(!mask) {} // In init compute false mask
 
 		template <typename T>
 		Result4& ElseIf(const Bool4& mask, const T& func) {
-			mask4() = _mask&mask;
+			auto elseIfMask = _mask&mask;
+			mask4() = elseIfMask;
 			func();
+			// For else block
+			_mask = _mask&(!elseIfMask);
 			return *this;
 		}
 

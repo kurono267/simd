@@ -181,6 +181,9 @@ BOOST_AUTO_TEST_CASE(Float4Ifs){
 	BOOST_CHECK_EQUAL(a[1],0.5f);
 	BOOST_CHECK_EQUAL(a[2],0.f);
 	BOOST_CHECK_EQUAL(a[3],1.f);
+
+	simd::Bool4 b(true);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END();
