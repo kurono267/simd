@@ -9,9 +9,10 @@
 
 namespace simd {
 
-Float4::Float4() : Float4(0.f) {}
+Float4::Float4() : simd(_mm_setzero_ps()) {}
 
 Float4::Float4(const Float4 &v){
+	//auto r = blend(*this,v,mask4());
 	simd = v.simd;
 }
 
@@ -28,6 +29,12 @@ Float4::Float4(const float *_data) {
 }
 
 Float4::Float4(const __m128 &_simd) : simd(_simd) {}
+
+Float4 &Float4::operator=(const Float4 &b) {
+	auto r = blend(*this,b,mask4());
+	simd = r.simd;
+	return *this;
+}
 
 Float4 &Float4::operator+=(const Float4 &b) {
 	simd = _mm_add_ps(simd,b.simd);
