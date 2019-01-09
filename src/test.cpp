@@ -1,5 +1,5 @@
 #include <iostream>
-#include "simd/sse/Float4.hpp"
+#include "simd/Float4.hpp"
 
 #define BOOST_TEST_DYN_LINK
 
@@ -7,6 +7,8 @@
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(Float4)
+
+using namespace simd;
 
 BOOST_AUTO_TEST_CASE(Float4Init)
 {
@@ -170,7 +172,7 @@ BOOST_AUTO_TEST_CASE(Float4Mask){
 
 BOOST_AUTO_TEST_CASE(Float4Ifs){
 	simd::Float4 a(1.f,1.f,2.f,3.f);
-	simd::If(a == simd::Float4(1.f),[&](){
+	If(a == simd::Float4(1.f),[&](){
 		a = simd::Float4(0.5f);
 	}).ElseIf(a > simd::Float4(2.f),[&](){
 		a = simd::Float4(1.f);
@@ -182,8 +184,22 @@ BOOST_AUTO_TEST_CASE(Float4Ifs){
 	BOOST_CHECK_EQUAL(a[2],0.f);
 	BOOST_CHECK_EQUAL(a[3],1.f);
 
-	simd::Bool4 b(true);
-
+	simd::Float4 b(1.f,2.f,3.f,4.f);
+	If((b > 1.f) & (b < 4.f),[&](){
+		If(b == 2.f,[&](){
+			b = 5.f;
+		}).ElseIf(b == 3.f,[&](){
+			b = 6.f;
+		});
+	}).ElseIf(b == 1.f,[&](){
+		b = 7.f;
+	}).Else([&](){
+		b = 8.f;
+	});
+	BOOST_CHECK_EQUAL(b[0],7.f);
+	BOOST_CHECK_EQUAL(b[1],5.f);
+	BOOST_CHECK_EQUAL(b[2],6.f);
+	BOOST_CHECK_EQUAL(b[3],8.f);
 }
 
 BOOST_AUTO_TEST_SUITE_END();

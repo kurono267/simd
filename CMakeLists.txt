@@ -5,6 +5,6 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(simd src/test.cpp src/simd/sse/Float4.hpp src/simd/Vec8.hpp src/simd/Vec16.hpp src/simd/sse/Float4.cpp)
+add_executable(simd src/test.cpp src/simd/Float4.hpp src/simd/Vec8.hpp src/simd/Float16.hpp)
 target_link_libraries(simd ${Boost_LIBRARIES})
 enable_testing ()
