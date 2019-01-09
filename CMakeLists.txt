@@ -5,6 +5,9 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(simd src/test.cpp src/simd/Float4.hpp src/simd/Vec8.hpp src/simd/Float16.hpp)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -march=skylake-avx512")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=skylake-avx512")
+
+add_executable(simd src/test4.cpp src/simd/Float4.hpp src/simd/Vec8.hpp src/simd/Float16.hpp)
 target_link_libraries(simd ${Boost_LIBRARIES})
 enable_testing ()

@@ -6,120 +6,123 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "portability-simd-intrinsics"
 
-#include <x86intrin.h>
+#include <immintrin.h>
 #include <functional>
 
 namespace simd {
 
 	class Bool16 {
 	public:
-		Bool16() : simd(_mm512_setzero_ps()) {}
-		Bool16(const bool v) : simd(v?_mm512_set1_epi32(0xFFFFFFFF):_mm512_setzero_ps()) {}
-		explicit Bool16(const __m128& data) : simd(data) {}
+		Bool16() : simd(_mm512_int2mask(0)) {}
+		Bool16(const bool v) : simd(v?_mm512_int2mask(0xFFFFFFFF):_mm512_int2mask(0)) {}
+		Bool16(const __mmask16& data) : simd(data) {}
 		Bool16(const Bool16& b) : simd(b.simd) {}
 
 		inline bool operator[](const int id) const {
-			return static_cast<bool>((_mm512_movemask_ps(simd) >> id) & 1);
+			return static_cast<bool>((_mm512_mask2int(simd) >> id) & 1);
 		}
 
-		__m512 simd;
+		__mmask16 simd;
 	};
 
-	inline Bool4 operator!(const Bool4& a){
-		return Bool4(_mm_xor_ps(a.simd,_mm_set1_epi32(0xFFFFFFFF)));
+	inline Bool16 operator!(const Bool16& a){
+		return _mm512_knot(a.simd);
 	}
 
-	inline Bool4 operator&(const Bool4& a, const Bool4& b){
-		return Bool4(_mm_and_ps(a.simd,b.simd));
+	inline Bool16 operator&(const Bool16& a, const Bool16& b){
+		return _mm512_kand(a.simd,b.simd);
 	}
 
-	inline Bool4 operator|(const Bool4& a, const Bool4& b){
-		return Bool4(_mm_or_ps(a.simd,b.simd));
+	inline Bool16 operator|(const Bool16& a, const Bool16& b){
+		return _mm512_kor(a.simd,b.simd);
 	}
 
-	inline Bool4 operator^(const Bool4& a, const Bool4& b){
-		return Bool4(_mm_xor_ps(a.simd,b.simd));
+	inline Bool16 operator^(const Bool16& a, const Bool16& b){
+		return _mm512_kxor(a.simd,b.simd);
 	}
 
-	thread_local static Bool4* __mask4;
+	thread_local static Bool16* __mask16;
 
-	inline Bool4& mask4(){
-		if(!__mask4){
-			__mask4 = new Bool4();
+	inline Bool16& mask16(){
+		if(!__mask16){
+			__mask16 = new Bool16();
 		}
-		return *__mask4;
+		return *__mask16;
 	}
 
-	inline void clearMask4(){
-		mask4() = Bool4();
+	inline void clearMask16(){
+		mask16() = Bool16();
 	}
 
-	class Float4 {
+	class Float16 {
 	public:
-		Float4() : simd(_mm_setzero_ps()) {}
+		Float16() : simd(_mm512_setzero_ps()) {}
 
-		Float4(const Float4 &v){
+		Float16(const Float16 &v){
 			//auto r = blend(*this,v,mask4());
 			simd = v.simd;
 		}
 
-		Float4(float v) {
-			simd = _mm_set1_ps(v);
+		Float16(float v) {
+			simd = _mm512_set1_ps(v);
 		}
 
-		Float4(float _x, float _y, float _z, float _w) {
-			simd = _mm_set_ps(_w,_z,_y,_x);
+		Float16(float _0, float _1, float _2, float _3,
+				float _4, float _5, float _6, float _7,
+				float _8, float _9, float _10, float _11,
+				float _12, float _13, float _14, float _15) {
+			simd = _mm512_set_ps(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15);
 		}
 
-		Float4(const float *_data) {
-			simd = _mm_load_ps(_data);
+		Float16(const float *_data) {
+			simd = _mm512_load_ps(_data);
 		}
 
-		Float4(const __m128 &_simd) : simd(_simd) {}
+		Float16(const __m512 &_simd) : simd(_simd) {}
 
-		Float4 &operator=(const Float4 &b) {
-			auto r = _mm_blendv_ps(simd,b.simd,mask4().simd);
+		Float16 &operator=(const Float16 &b) {
+			auto r = _mm512_mask_blend_ps(mask16().simd,simd,b.simd);
 			simd = r;
 			return *this;
 		}
 
-		Float4 &operator+=(const Float4 &b) {
-			simd = _mm_add_ps(simd,b.simd);
+		Float16 &operator+=(const Float16 &b) {
+			simd = _mm512_add_ps(simd,b.simd);
 			return *this;
 		}
 
-		Float4 &operator+=(float b) {
-			simd = _mm_add_ps(simd,_mm_set1_ps(b));
+		Float16 &operator+=(float b) {
+			simd = _mm512_add_ps(simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
-		Float4 &operator-=(const Float4 &b) {
-			simd = _mm_sub_ps(simd,b.simd);
+		Float16 &operator-=(const Float16 &b) {
+			simd = _mm512_sub_ps(simd,b.simd);
 			return *this;
 		}
 
-		Float4 &operator-=(float b) {
-			simd = _mm_sub_ps(simd,_mm_set1_ps(b));
+		Float16 &operator-=(float b) {
+			simd = _mm512_sub_ps(simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
-		Float4 &operator*=(const Float4 &b) {
-			simd = _mm_mul_ps(simd,b.simd);
+		Float16 &operator*=(const Float16 &b) {
+			simd = _mm512_mul_ps(simd,b.simd);
 			return *this;
 		}
 
-		Float4 &operator*=(float b) {
-			simd = _mm_mul_ps(simd,_mm_set1_ps(b));
+		Float16 &operator*=(float b) {
+			simd = _mm512_mul_ps(simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
-		Float4 &operator/=(const Float4 &b) {
-			simd = _mm_div_ps(simd,b.simd);
+		Float16 &operator/=(const Float16 &b) {
+			simd = _mm512_div_ps(simd,b.simd);
 			return *this;
 		}
 
-		Float4 &operator/=(float b) {
-			simd = _mm_div_ps(simd,_mm_set1_ps(b));
+		Float16 &operator/=(float b) {
+			simd = _mm512_div_ps(simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
@@ -132,108 +135,105 @@ namespace simd {
 		}
 
 		union {
-			struct {
-				float x; float y; float z; float w;
-			};
-			float data[4];
-			__m128 simd;
+			float data[16];
+			__m512 simd;
 		};
 	};
 
-	Float4 operator+(const Float4 &a, const Float4 &b) {
-		return Float4(_mm_add_ps(a.simd,b.simd));
+	Float16 operator+(const Float16 &a, const Float16 &b) {
+		return _mm512_add_ps(a.simd,b.simd);
 	}
 
-	Float4 operator+(const Float4 &a, float b) {
-		return Float4(_mm_add_ps(a.simd,_mm_set1_ps(b)));
+	Float16 operator+(const Float16 &a, float b) {
+		return _mm512_add_ps(a.simd,_mm512_set1_ps(b));
 	}
 
-	Float4 operator-(const Float4 &a, const Float4 &b) {
-		return Float4(_mm_sub_ps(a.simd,b.simd));
+	Float16 operator-(const Float16 &a, const Float16 &b) {
+		return _mm512_sub_ps(a.simd,b.simd);
 	}
 
-	Float4 operator-(const Float4 &a, float b) {
-		return Float4(_mm_sub_ps(a.simd,_mm_set1_ps(b)));
+	Float16 operator-(const Float16 &a, float b) {
+		return _mm512_sub_ps(a.simd,_mm512_set1_ps(b));
 	}
 
-	Float4 operator*(const Float4 &a, const Float4 &b) {
-		return Float4(_mm_mul_ps(a.simd,b.simd));
+	Float16 operator*(const Float16 &a, const Float16 &b) {
+		return _mm512_mul_ps(a.simd,b.simd);
 	}
 
-	Float4 operator*(const Float4 &a, float b) {
-		return Float4(_mm_mul_ps(a.simd,_mm_set1_ps(b)));
+	Float16 operator*(const Float16 &a, float b) {
+		return _mm512_mul_ps(a.simd,_mm512_set1_ps(b));
 	}
 
-	Float4 operator/(const Float4 &a, const Float4 &b) {
-		return Float4(_mm_div_ps(a.simd,b.simd));
+	Float16 operator/(const Float16 &a, const Float16 &b) {
+		return _mm512_div_ps(a.simd,b.simd);
 	}
 
-	Float4 operator/(const Float4 &a, float b) {
-		return Float4(_mm_div_ps(a.simd,_mm_set1_ps(b)));
+	Float16 operator/(const Float16 &a, float b) {
+		return _mm512_div_ps(a.simd,_mm512_set1_ps(b));
 	}
 
-	inline Bool4 operator<(const Float4& a, const Float4& b) {
-		return Bool4(_mm_cmplt_ps(a.simd,b.simd));
+	inline Bool16 operator<(const Float16& a, const Float16& b) {
+		return _mm512_cmp_ps_mask(a.simd,b.simd,_CMP_LT_OS);
 	}
 
-	inline Bool4 operator>(const Float4& a, const Float4& b) {
-		return Bool4(_mm_cmpgt_ps(a.simd,b.simd));
+	inline Bool16 operator<=(const Float16& a, const Float16& b) {
+		return _mm512_cmp_ps_mask(a.simd,b.simd,_CMP_LE_OS);
 	}
 
-	inline Bool4 operator<=(const Float4& a, const Float4& b) {
-		return Bool4(_mm_cmple_ps(a.simd,b.simd));
+	inline Bool16 operator>(const Float16& a, const Float16& b) {
+		return _mm512_cmp_ps_mask(a.simd,b.simd,_CMP_GT_OS);
 	}
 
-	inline Bool4 operator>=(const Float4& a, const Float4& b) {
-		return Bool4(_mm_cmpge_ps(a.simd,b.simd));
+	inline Bool16 operator>=(const Float16& a, const Float16& b) {
+		return _mm512_cmp_ps_mask(a.simd,b.simd,_CMP_GE_OS);
 	}
 
-	inline Bool4 operator==(const Float4& a, const Float4& b) {
-		return Bool4(_mm_cmpeq_ps(a.simd,b.simd));
+	inline Bool16 operator==(const Float16& a, const Float16& b) {
+		return _mm512_cmpeq_ps_mask(a.simd,b.simd);
 	}
 
-	inline Bool4 operator!=(const Float4& a, const Float4& b) {
-		return Bool4(_mm_cmpneq_ps(a.simd,b.simd));
+	inline Bool16 operator!=(const Float16& a, const Float16& b) {
+		return _mm512_cmpneq_ps_mask(a.simd,b.simd);
 	}
 
-	inline Float4 blend(const Float4& a, const Float4& b, const Bool4& m){
-		return Float4(_mm_blendv_ps(a.simd,b.simd,m.simd));
+	inline Float16 blend(const Float16& a, const Float16& b, const Bool16& m){
+		return _mm512_mask_blend_ps(m.simd,a.simd,b.simd);
 	}
 
-	class Result4 {
+	class Result16 {
 	public:
-		Result4(const Bool4& mask) : _mask(mask) {} // In init compute false mask
+		Result16(const Bool16& mask) : _mask(mask) {} // In init compute false mask
 
 		template <typename T>
-		Result4& ElseIf(const Bool4& mask, const T& func) {
+		Result16& ElseIf(const Bool16& mask, const T& func) {
 			_elseMask = !_mask;
 			auto elseIfMask = _elseMask&mask;
-			mask4() = elseIfMask;
+			mask16() = elseIfMask;
 			func();
 			// For else block
 			_elseMask = _elseMask&(!elseIfMask);
-			mask4() = _mask;
+			mask16() = _mask;
 			return *this;
 		}
 
 		template <typename T>
 		void Else(const T& func){
-			mask4() = _elseMask;
+			mask16() = _elseMask;
 			func();
-			mask4() = _mask;
+			mask16() = _mask;
 		}
 	private:
-		Bool4 _mask;
-		Bool4 _elseMask;
+		Bool16 _mask;
+		Bool16 _elseMask;
 	};
 
 	template<typename T>
-	Result4 If(const Bool4& mask, const T& func){
-		auto prevMask = mask4();
-		mask4() = mask;
+	Result16 If(const Bool16& mask, const T& func){
+		auto prevMask = mask16();
+		mask16() = mask;
 		func();
-		mask4() = prevMask;
-		return Result4(mask);
+		mask16() = prevMask;
+		return Result16(mask);
 	}
 
 }
