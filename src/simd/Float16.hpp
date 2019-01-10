@@ -238,6 +238,17 @@ namespace simd {
 		return Result16(mask);
 	}
 
+	inline Float16 max(const Float16& a, const Float16& b){
+		return _mm512_max_ps(a.simd,b.simd);
+	}
+
+	inline Float16 min(const Float16& a, const Float16& b){
+		return _mm512_min_ps(a.simd,b.simd);
+	}
+
+	inline Float16 abs(const Float16& a){
+		return _mm512_abs_ps(a.simd);
+	}
 }
 
 #pragma clang diagnostic pop
