@@ -1,6 +1,6 @@
 #include <iostream>
-#include "simd/Float4.hpp"
-#include "simd/Float16.hpp"
+#include "../src/simd/Float4.hpp"
+#include "../src/simd/Float16.hpp"
 
 #define BOOST_TEST_DYN_LINK
 

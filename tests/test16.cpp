@@ -1,5 +1,5 @@
 #include <iostream>
-#include "simd/Float16.hpp"
+#include "../src/simd/Float16.hpp"
 
 #define BOOST_TEST_MODULE SimdTests
 #include <boost/test/unit_test.hpp>
