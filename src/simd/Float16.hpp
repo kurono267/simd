@@ -25,6 +25,18 @@ namespace simd {
 		__mmask16 simd;
 	};
 
+	inline bool any(const Bool16& a){
+		return _mm512_mask2int(a.simd) == 0;
+	}
+
+	inline bool all(const Bool16& a){
+		return _mm512_mask2int(a.simd) == 0xFFFFFFFF;
+	}
+
+	inline bool none(const Bool16& a){
+		return _mm512_mask2int(a.simd) == 0;
+	}
+
 	inline Bool16 operator!(const Bool16& a){
 		return _mm512_knot(a.simd);
 	}
