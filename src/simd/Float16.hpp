@@ -26,7 +26,7 @@ namespace simd {
 	};
 
 	inline bool any(const Bool16& a){
-		return _mm512_mask2int(a.simd) == 0;
+		return _mm512_mask2int(a.simd) != 0;
 	}
 
 	inline bool all(const Bool16& a){
@@ -63,7 +63,7 @@ namespace simd {
 	}
 
 	inline void clearMask16(){
-		mask16() = Bool16();
+		mask16() = Bool16(true);
 	}
 
 	constexpr size_t Float16_Size = 16;
@@ -95,8 +95,8 @@ namespace simd {
 		Float16(const __m512 &_simd) : simd(_simd) {}
 
 		inline Float16 &operator=(const Float16 &b) {
-			auto r = _mm512_mask_blend_ps(mask16().simd,simd,b.simd);
-			simd = r;
+			if(all(mask16()))simd = b.simd;
+			else simd = _mm512_mask_blend_ps(mask16().simd,simd,b.simd);
 			return *this;
 		}
 
@@ -216,38 +216,41 @@ namespace simd {
 
 	class Result16 {
 	public:
-		Result16(const Bool16& mask) : _mask(mask) {} // In init compute false mask
+		Result16(const Bool16& mask, const Bool16& prevMask) : _mask(mask), _prevMask(prevMask),_elseMask(!_mask) {} // In init compute false mask
 
 		template <typename T>
 		Result16& ElseIf(const Bool16& mask, const T& func) {
-			_elseMask = !_mask;
 			auto elseIfMask = _elseMask&mask;
-			mask16() = elseIfMask;
-			func();
 			// For else block
 			_elseMask = _elseMask&(!elseIfMask);
-			mask16() = _mask;
+			if(none(elseIfMask))return *this;
+			mask16() = elseIfMask;
+			func();
+			mask16() = _prevMask;
 			return *this;
 		}
 
 		template <typename T>
 		void Else(const T& func){
+			if(none(_elseMask))return;
 			mask16() = _elseMask;
 			func();
-			mask16() = _mask;
+			mask16() = _prevMask;
 		}
 	private:
 		Bool16 _mask;
 		Bool16 _elseMask;
+		Bool16 _prevMask;
 	};
 
 	template<typename T>
 	Result16 If(const Bool16& mask, const T& func){
 		auto prevMask = mask16();
+		if(none(mask))return Result16(mask,prevMask);
 		mask16() = mask;
 		func();
 		mask16() = prevMask;
-		return Result16(mask);
+		return Result16(mask,prevMask);
 	}
 
 	inline Float16 max(const Float16& a, const Float16& b){
