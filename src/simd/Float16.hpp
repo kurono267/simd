@@ -8,6 +8,7 @@
 
 #include <immintrin.h>
 #include <functional>
+#include <stack>
 
 namespace simd {
 
@@ -30,7 +31,7 @@ namespace simd {
 	}
 
 	inline bool all(const Bool16& a){
-		return _mm512_mask2int(a.simd) == 0xFFFFFFFF;
+		return _mm512_mask2int(a.simd) == 0xFFFF;
 	}
 
 	inline bool none(const Bool16& a){
@@ -53,17 +54,14 @@ namespace simd {
 		return _mm512_kxor(a.simd,b.simd);
 	}
 
-	thread_local static Bool16* __mask16;
+	thread_local static std::stack<Bool16>* __stack16;
 
-	inline Bool16& mask16(){
-		if(!__mask16){
-			__mask16 = new Bool16();
+	inline std::stack<Bool16>& stack16(){
+		if(!__stack16) {
+			__stack16 = new std::stack<Bool16>();
+			__stack16->push(Bool16(true));
 		}
-		return *__mask16;
-	}
-
-	inline void clearMask16(){
-		mask16() = Bool16(true);
+		return *__stack16;
 	}
 
 	constexpr size_t Float16_Size = 16;
@@ -95,48 +93,57 @@ namespace simd {
 		Float16(const __m512 &_simd) : simd(_simd) {}
 
 		inline Float16 &operator=(const Float16 &b) {
-			if(all(mask16()))simd = b.simd;
-			else simd = _mm512_mask_blend_ps(mask16().simd,simd,b.simd);
+			auto mask16 = stack16().top();
+			if(all(mask16))simd = b.simd;
+			else simd = _mm512_mask_blend_ps(mask16.simd,simd,b.simd);
 			return *this;
 		}
 
 		inline Float16 &operator+=(const Float16 &b) {
-			simd = _mm512_add_ps(simd,b.simd);
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_add_ps(simd,mask16.simd,simd,b.simd);
 			return *this;
 		}
 
 		inline Float16 &operator+=(float b) {
-			simd = _mm512_add_ps(simd,_mm512_set1_ps(b));
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_add_ps(simd,mask16.simd,simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
 		inline Float16 &operator-=(const Float16 &b) {
-			simd = _mm512_sub_ps(simd,b.simd);
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_sub_ps(simd,mask16.simd,simd,b.simd);
 			return *this;
 		}
 
 		inline Float16 &operator-=(float b) {
-			simd = _mm512_sub_ps(simd,_mm512_set1_ps(b));
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_sub_ps(simd,mask16.simd,simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
 		inline Float16 &operator*=(const Float16 &b) {
-			simd = _mm512_mul_ps(simd,b.simd);
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_mul_ps(simd,mask16.simd,simd,b.simd);
 			return *this;
 		}
 
 		inline Float16 &operator*=(float b) {
-			simd = _mm512_mul_ps(simd,_mm512_set1_ps(b));
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_mul_ps(simd,mask16.simd,simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
 		inline Float16 &operator/=(const Float16 &b) {
-			simd = _mm512_div_ps(simd,b.simd);
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_div_ps(simd,mask16.simd,simd,b.simd);
 			return *this;
 		}
 
 		inline Float16 &operator/=(float b) {
-			simd = _mm512_div_ps(simd,_mm512_set1_ps(b));
+			auto mask16 = stack16().top();
+			simd = _mm512_mask_div_ps(simd,mask16.simd,simd,_mm512_set1_ps(b));
 			return *this;
 		}
 
@@ -216,41 +223,39 @@ namespace simd {
 
 	class Result16 {
 	public:
-		Result16(const Bool16& mask, const Bool16& prevMask) : _mask(mask), _prevMask(prevMask),_elseMask(!_mask) {} // In init compute false mask
+		Result16(const Bool16& mask) : _else(!mask) {} // In init compute false mask
 
 		template <typename T>
 		Result16& ElseIf(const Bool16& mask, const T& func) {
-			auto elseIfMask = _elseMask&mask;
-			// For else block
-			_elseMask = _elseMask&(!elseIfMask);
+			auto elseIfMask = _else&mask;
+			_else = _else&(!mask);
 			if(none(elseIfMask))return *this;
-			mask16() = elseIfMask;
+			stack16().push(elseIfMask);
 			func();
-			mask16() = _prevMask;
+			stack16().pop();
 			return *this;
 		}
 
 		template <typename T>
 		void Else(const T& func){
-			if(none(_elseMask))return;
-			mask16() = _elseMask;
+			if(none(_else))return;
+			stack16().push(_else);
 			func();
-			mask16() = _prevMask;
+			stack16().pop();
 		}
 	private:
-		Bool16 _mask;
-		Bool16 _elseMask;
-		Bool16 _prevMask;
+		Bool16 _else;
 	};
 
 	template<typename T>
 	Result16 If(const Bool16& mask, const T& func){
-		auto prevMask = mask16();
-		if(none(mask))return Result16(mask,prevMask);
-		mask16() = mask;
+		auto topMask = stack16().top();
+		auto ifMask = topMask&mask;
+		if(none(ifMask))return Result16(ifMask);
+		stack16().push(ifMask);
 		func();
-		mask16() = prevMask;
-		return Result16(mask,prevMask);
+		stack16().pop();
+		return Result16(ifMask);
 	}
 
 	inline Float16 max(const Float16& a, const Float16& b){
