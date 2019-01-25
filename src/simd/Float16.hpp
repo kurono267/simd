@@ -227,7 +227,9 @@ namespace simd {
 
 		template <typename T>
 		Result16& ElseIf(const Bool16& mask, const T& func) {
+			auto topMask = stack16().top();
 			auto elseIfMask = _else&mask;
+			elseIfMask = elseIfMask&topMask;
 			_else = _else&(!mask);
 			if(none(elseIfMask))return *this;
 			stack16().push(elseIfMask);
@@ -238,8 +240,10 @@ namespace simd {
 
 		template <typename T>
 		void Else(const T& func){
-			if(none(_else))return;
-			stack16().push(_else);
+			auto topMask = stack16().top();
+			auto elseMask = _else&topMask;
+			if(none(elseMask))return;
+			stack16().push(elseMask);
 			func();
 			stack16().pop();
 		}
@@ -251,7 +255,7 @@ namespace simd {
 	Result16 If(const Bool16& mask, const T& func){
 		auto topMask = stack16().top();
 		auto ifMask = topMask&mask;
-		if(none(ifMask))return Result16(ifMask);
+		if(none(ifMask))return Result16(mask);
 		stack16().push(ifMask);
 		func();
 		stack16().pop();
