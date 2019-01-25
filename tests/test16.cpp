@@ -175,13 +175,14 @@ BOOST_AUTO_TEST_SUITE(Float16)
 			else BOOST_CHECK_EQUAL(b6[i],c[i]);
 		}
 		// Test with thread local mask
-		simd::mask16() = mask == simd::Float16(1.f);
+		simd::stack16().push(mask == simd::Float16(1.f));
 		simd::Float16 t(10.f);
 		t = c;
 		for(int i = 0;i<Float16_Size;++i){
 			if(mask[i] == 1.f)BOOST_CHECK_EQUAL(t[i],c[i]);
 			else BOOST_CHECK_EQUAL(t[i],10.f);
 		}
+		simd::stack16().pop();
 	}
 
 	BOOST_AUTO_TEST_CASE(Float16Ifs){
